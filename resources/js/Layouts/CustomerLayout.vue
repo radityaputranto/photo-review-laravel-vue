@@ -18,6 +18,19 @@ const isExactActive = (href) => {
 
 <template>
     <div class="min-h-screen bg-gradient-to-br from-white via-blue-50 to-slate-50">
+        <!-- Impersonation Banner -->
+        <div v-if="$page.props.is_impersonating" class="bg-indigo-600 text-white px-4 py-2 text-sm font-medium flex justify-between items-center z-30 relative">
+            <span>You are currently impersonating <strong>{{ user.name }}</strong>.</span>
+            <Link
+                :href="route('customer.impersonate.stop')"
+                method="post"
+                as="button"
+                class="bg-indigo-700 hover:bg-indigo-800 px-4 py-1.5 rounded-lg transition-colors text-xs font-bold uppercase tracking-wider"
+            >
+                Back to Admin
+            </Link>
+        </div>
+
         <!-- Navbar -->
         <nav class="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-100">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

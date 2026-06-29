@@ -4,6 +4,7 @@ import {
     HomeIcon,
     CalendarIcon,
     UsersIcon,
+    UserGroupIcon,
     DocumentTextIcon,
     ArrowRightOnRectangleIcon,
     CameraIcon,
@@ -46,6 +47,7 @@ const navItems = computed(() => {
     
     if (user.role === 'admin' || user.role === 'super_admin') {
         items.push({ label: 'Customers', href: route('admin.customers.index'), icon: UsersIcon })
+        items.push({ label: 'Staff', href: route('admin.admins.index'), icon: UserGroupIcon })
         items.push({ label: 'Documents', href: route('admin.documents.index'), icon: DocumentTextIcon })
     }
     

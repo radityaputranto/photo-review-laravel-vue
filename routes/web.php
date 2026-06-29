@@ -4,7 +4,16 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
 // ─── Public ─────────────────────────────────────────────────────────────────
-Route::get('/', fn() => redirect()->route('login'));
+Route::get('/', function () {
+    if (auth()->check()) {
+        $user = auth()->user();
+        if (in_array($user->role, ['admin', 'photographer'])) {
+            return redirect()->route('admin.dashboard');
+        }
+        return redirect()->route('customer.dashboard');
+    }
+    return redirect()->route('login');
+});
 
 // ─── Auth (bawaan Breeze, jangan hapus) ──────────────────────────────────────
 require __DIR__.'/auth.php';
@@ -15,6 +24,10 @@ Route::middleware(['auth', 'role:customer'])->prefix('customer')->name('customer
     // Dashboard
     Route::get('/dashboard', [\App\Http\Controllers\Customer\DashboardController::class, 'index'])
         ->name('dashboard');
+        
+    // Impersonation Stop
+    Route::post('/impersonate/stop', [\App\Http\Controllers\Admin\ImpersonationController::class, 'stop'])
+        ->name('impersonate.stop');
 
     // Gallery & Selections
     Route::get('/sessions/{session}/gallery', [\App\Http\Controllers\Customer\GalleryController::class, 'show'])
@@ -79,5 +92,17 @@ Route::middleware(['auth', 'role:admin,photographer'])->prefix('admin')->name('a
 
         Route::patch('/customers/{customer}/toggle-active', [\App\Http\Controllers\Admin\CustomerController::class, 'toggleActive'])
             ->name('customers.toggle-active');
+            
+        // Impersonation
+        Route::post('/impersonate/{user}', [\App\Http\Controllers\Admin\ImpersonationController::class, 'start'])
+            ->name('impersonate');
+
+        // Staff / Admins
+        Route::resource('admins', \App\Http\Controllers\Admin\AdminUserController::class)
+            ->parameters(['admins' => 'admin'])
+            ->only(['index', 'store', 'update', 'destroy']);
+            
+        Route::patch('/admins/{admin}/toggle-active', [\App\Http\Controllers\Admin\AdminUserController::class, 'toggleActive'])
+            ->name('admins.toggle-active');
     });
 });

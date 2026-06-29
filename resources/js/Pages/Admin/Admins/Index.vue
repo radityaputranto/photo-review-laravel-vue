@@ -9,24 +9,24 @@ import {
     PencilIcon,
     TrashIcon,
     MagnifyingGlassIcon,
-    ArrowRightOnRectangleIcon,
 } from "@heroicons/vue/24/outline";
 import { useVuelidate } from "@vuelidate/core";
 import { useValidationRules } from "@/Composables/useValidationRules";
 
 const props = defineProps({
-    customers: Object,
+    admins: Object,
     filters: Object,
+    auth: Object,
 });
 
 const isModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
-const editingCustomer = ref(null);
-const deletingCustomer = ref(null);
+const editingAdmin = ref(null);
+const deletingAdmin = ref(null);
 const searchQuery = ref(props.filters?.search || "");
 
 watch(searchQuery, (value) => {
-    router.get(route('admin.customers.index'), { search: value }, {
+    router.get(route('admin.admins.index'), { search: value }, {
         preserveState: true,
         replace: true
     });
@@ -35,6 +35,7 @@ watch(searchQuery, (value) => {
 const form = useForm({
     name: "",
     email: "",
+    role: "photographer",
     password: "",
     password_confirmation: "",
 });
@@ -43,8 +44,9 @@ const { rules, custom } = useValidationRules();
 const validationRules = computed(() => ({
     name: { required: rules.required },
     email: rules.email,
-    password: editingCustomer.value ? {} : rules.password,
-    password_confirmation: editingCustomer.value
+    role: { required: rules.required },
+    password: editingAdmin.value ? {} : rules.password,
+    password_confirmation: editingAdmin.value
         ? {}
         : {
               required: rules.required,
@@ -57,13 +59,15 @@ const validationRules = computed(() => ({
 
 const v$ = useVuelidate(validationRules, form);
 
-const openModal = (customer = null) => {
-    editingCustomer.value = customer;
-    if (customer) {
-        form.name = customer.name;
-        form.email = customer.email;
+const openModal = (admin = null) => {
+    editingAdmin.value = admin;
+    if (admin) {
+        form.name = admin.name;
+        form.email = admin.email;
+        form.role = admin.role;
     } else {
         form.reset();
+        form.role = "photographer";
     }
     form.clearErrors();
     v$.value.$reset();
@@ -74,7 +78,7 @@ const closeModal = () => {
     isModalOpen.value = false;
     setTimeout(() => {
         form.reset();
-        editingCustomer.value = null;
+        editingAdmin.value = null;
     }, 200);
 };
 
@@ -82,40 +86,66 @@ const submit = async () => {
     const isFormValid = await v$.value.$validate();
     if (!isFormValid) return;
 
-    if (editingCustomer.value) {
-        form.put(route("admin.customers.update", editingCustomer.value.id), {
+    if (editingAdmin.value) {
+        form.put(route("admin.admins.update", editingAdmin.value.id), {
             onSuccess: () => closeModal(),
         });
     } else {
-        form.post(route("admin.customers.store"), {
+        form.post(route("admin.admins.store"), {
             onSuccess: () => closeModal(),
         });
     }
 };
 
-const confirmDelete = (customer) => {
-    deletingCustomer.value = customer;
+const confirmDelete = (admin) => {
+    deletingAdmin.value = admin;
     isDeleteModalOpen.value = true;
 };
 
-const deleteCustomer = () => {
-    form.delete(route("admin.customers.destroy", deletingCustomer.value.id), {
+const deleteAdmin = () => {
+    form.delete(route("admin.admins.destroy", deletingAdmin.value.id), {
         onSuccess: () => {
             isDeleteModalOpen.value = false;
-            deletingCustomer.value = null;
+            deletingAdmin.value = null;
         },
     });
 };
 
-const toggleActive = (customer) => {
-    form.patch(route("admin.customers.toggle-active", customer.id), {
+const toggleActive = (admin) => {
+    form.patch(route("admin.admins.toggle-active", admin.id), {
         preserveScroll: true,
     });
+};
+
+const displayRole = (role) => {
+    switch(role) {
+        case 'super_admin': return 'Super Admin';
+        case 'admin': return 'Admin';
+        case 'photographer': return 'Photographer';
+        default: return role;
+    }
+};
+
+const canEdit = (admin) => {
+    if (admin.role === 'super_admin') return false;
+    return true;
+};
+
+const canDelete = (admin) => {
+    if (admin.role === 'super_admin') return false;
+    if (admin.id === props.auth.user.id) return false;
+    return true;
+};
+
+const canToggleStatus = (admin) => {
+    if (admin.role === 'super_admin') return false;
+    if (admin.id === props.auth.user.id) return false;
+    return true;
 };
 </script>
 
 <template>
-    <Head title="Customer Management" />
+    <Head title="Staff Management" />
 
     <AdminLayout>
         <!-- Top Header -->
@@ -125,10 +155,10 @@ const toggleActive = (customer) => {
                     <h1
                         class="text-3xl font-bold text-slate-900 tracking-tight"
                     >
-                        Customer Management
+                        Staff Management
                     </h1>
                     <p class="text-base text-slate-500 mt-1">
-                        Manage client accounts and access
+                        Manage admins and photographers
                     </p>
                 </div>
                 <button
@@ -136,7 +166,7 @@ const toggleActive = (customer) => {
                     class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-sm font-medium flex items-center gap-2 transition-all shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-95"
                 >
                     <PlusIcon class="w-5 h-5" />
-                    Add Customer
+                    Add Staff
                 </button>
             </div>
 
@@ -151,7 +181,7 @@ const toggleActive = (customer) => {
                         type="text"
                         v-model="searchQuery"
                         class="w-full h-12 pl-11 pr-4 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-600 text-base placeholder:text-slate-400 transition-all"
-                        placeholder="Search customers..."
+                        placeholder="Search staff..."
                     />
                 </div>
             </div>
@@ -177,6 +207,11 @@ const toggleActive = (customer) => {
                             <th
                                 class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"
                             >
+                                Role
+                            </th>
+                            <th
+                                class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"
+                            >
                                 Status
                             </th>
                             <th
@@ -188,68 +223,78 @@ const toggleActive = (customer) => {
                     </thead>
                     <tbody class="bg-white divide-y divide-slate-100">
                         <tr
-                            v-for="customer in customers.data"
-                            :key="customer.id"
+                            v-for="admin in admins.data"
+                            :key="admin.id"
                             class="hover:bg-slate-50 transition-colors"
                         >
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="font-medium text-slate-900">
-                                    {{ customer.name }}
+                                <div class="font-medium text-slate-900 flex items-center gap-2">
+                                    {{ admin.name }}
+                                    <span v-if="admin.id === auth.user.id" class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 uppercase">You</span>
                                 </div>
                             </td>
                             <td
                                 class="px-6 py-4 whitespace-nowrap text-slate-600"
                             >
-                                {{ customer.email }}
+                                {{ admin.email }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-3 py-1 rounded-full text-xs font-semibold"
+                                    :class="admin.role === 'admin' ? 'bg-purple-50 text-purple-700' : 'bg-slate-100 text-slate-700'">
+                                    {{ displayRole(admin.role) }}
+                                </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <button
-                                    @click="toggleActive(customer)"
+                                    v-if="canToggleStatus(admin)"
+                                    @click="toggleActive(admin)"
                                     :class="
-                                        customer.is_active
+                                        admin.is_active
                                             ? 'bg-green-50 text-green-700'
                                             : 'bg-red-50 text-red-700'
                                     "
                                     class="px-3 py-1 rounded-full text-xs font-semibold transition-all hover:scale-105 active:scale-95"
                                 >
                                     {{
-                                        customer.is_active
+                                        admin.is_active
                                             ? "Active"
                                             : "Inactive"
                                     }}
                                 </button>
+                                <span
+                                    v-else
+                                    :class="
+                                        admin.is_active
+                                            ? 'bg-green-50 text-green-700'
+                                            : 'bg-red-50 text-red-700'
+                                    "
+                                    class="px-3 py-1 rounded-full text-xs font-semibold opacity-60 cursor-not-allowed"
+                                >
+                                    {{ admin.is_active ? "Active" : "Inactive" }}
+                                </span>
                             </td>
                             <td
-                                class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end items-center"
+                                class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
                             >
-                                <Link
-                                    :href="route('admin.impersonate', customer.id)"
-                                    method="post"
-                                    as="button"
-                                    title="Login as User"
-                                    class="p-2 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors mr-2"
-                                >
-                                    <ArrowRightOnRectangleIcon class="w-5 h-5 inline-block" />
-                                </Link>
                                 <button
-                                    @click="openModal(customer)"
-                                    title="Edit Customer"
+                                    v-if="canEdit(admin)"
+                                    @click="openModal(admin)"
                                     class="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors mr-2"
                                 >
                                     <PencilIcon class="w-5 h-5 inline-block" />
                                 </button>
                                 <button
-                                    @click="confirmDelete(customer)"
-                                    title="Delete Customer"
+                                    v-if="canDelete(admin)"
+                                    @click="confirmDelete(admin)"
                                     class="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                                 >
                                     <TrashIcon class="w-5 h-5 inline-block" />
                                 </button>
                             </td>
                         </tr>
-                        <tr v-if="!customers.data.length">
-                            <td colspan="4" class="px-6 py-12 text-center text-slate-500">
-                                No customers found.
+                        <tr v-if="!admins.data.length">
+                            <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                                No staff found.
                             </td>
                         </tr>
                     </tbody>
@@ -258,10 +303,10 @@ const toggleActive = (customer) => {
                 <!-- Pagination -->
                 <div
                     class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-center"
-                    v-if="customers.links.length > 3"
+                    v-if="admins.links.length > 3"
                 >
                     <div class="flex items-center gap-1">
-                        <template v-for="(link, k) in customers.links" :key="k">
+                        <template v-for="(link, k) in admins.links" :key="k">
                             <div
                                 v-if="link.url === null"
                                 class="px-3 py-1 text-sm text-slate-400 border border-slate-100 rounded-lg bg-white"
@@ -290,7 +335,7 @@ const toggleActive = (customer) => {
                 <h2
                     class="text-xl font-bold text-slate-900 mb-6 tracking-tight"
                 >
-                    {{ editingCustomer ? "Edit Customer" : "Add Customer" }}
+                    {{ editingAdmin ? "Edit Staff" : "Add Staff" }}
                 </h2>
 
                 <form @submit.prevent="submit" class="space-y-6">
@@ -322,12 +367,34 @@ const toggleActive = (customer) => {
                         "
                     />
 
+                    <!-- Role Selection -->
+                    <div>
+                        <label for="role" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                            Role <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            id="role"
+                            v-model="form.role"
+                            :disabled="editingAdmin && editingAdmin.id === auth.user.id"
+                            class="w-full h-11 px-4 bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent text-base transition-all disabled:opacity-50 disabled:bg-slate-100"
+                        >
+                            <option value="photographer">Photographer</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                        <div v-if="v$.role.$error || form.errors.role" class="mt-1.5 text-sm text-red-600 font-medium flex items-center gap-1">
+                            {{ v$.role.$error ? v$.role.$errors[0].$message : form.errors.role }}
+                        </div>
+                        <p v-if="editingAdmin && editingAdmin.id === auth.user.id" class="mt-1.5 text-xs text-slate-500">
+                            You cannot change your own role.
+                        </p>
+                    </div>
+
                     <FormField
                         id="password"
                         label="Password"
                         type="password"
                         v-model="form.password"
-                        :required="!editingCustomer"
+                        :required="!editingAdmin"
                         @blur="v$.password.$touch()"
                         :error="
                             v$.password.$error
@@ -341,7 +408,7 @@ const toggleActive = (customer) => {
                         label="Confirm Password"
                         type="password"
                         v-model="form.password_confirmation"
-                        :required="!editingCustomer"
+                        :required="!editingAdmin"
                         @blur="v$.password_confirmation.$touch()"
                         :error="
                             v$.password_confirmation.$error
@@ -363,7 +430,7 @@ const toggleActive = (customer) => {
                             class="px-6 py-3 rounded-xl font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-70 transition-all active:scale-95 shadow-sm"
                             :disabled="form.processing"
                         >
-                            Save Customer
+                            Save Staff
                         </button>
                     </div>
                 </form>
@@ -381,7 +448,7 @@ const toggleActive = (customer) => {
                     Confirm Deletion
                 </h2>
                 <p class="text-sm text-slate-500 mb-6 leading-relaxed">
-                    Are you sure you want to delete this customer? This action
+                    Are you sure you want to delete this staff member? This action
                     cannot be undone.
                 </p>
                 <div class="flex justify-end gap-3">
@@ -392,7 +459,7 @@ const toggleActive = (customer) => {
                         Cancel
                     </button>
                     <button
-                        @click="deleteCustomer"
+                        @click="deleteAdmin"
                         class="px-6 py-2.5 rounded-xl font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-70 transition-all active:scale-95 shadow-sm"
                         :disabled="form.processing"
                     >
