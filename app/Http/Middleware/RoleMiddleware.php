@@ -8,9 +8,19 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    public function handle(Request $request, Closure $next, string $role): Response
+    public function handle(Request $request, Closure $next, string ...$roles): Response
     {
-        if (!$request->user() || $request->user()->role !== $role) {
+        $user = $request->user();
+
+        if (!$user) {
+            abort(403, 'Unauthorized.');
+        }
+
+        if ($user->role === 'super_admin') {
+            return $next($request);
+        }
+
+        if (!in_array($user->role, $roles)) {
             abort(403, 'Unauthorized.');
         }
 

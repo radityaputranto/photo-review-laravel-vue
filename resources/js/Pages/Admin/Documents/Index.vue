@@ -1,5 +1,5 @@
 <script setup>
-import { Head, useForm } from "@inertiajs/vue3";
+import { Head, useForm, router } from "@inertiajs/vue3";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 import Modal from "@/Components/Modal.vue";
 import FormField from "@/Components/FormField.vue";
@@ -11,7 +11,7 @@ import {
     CurrencyDollarIcon,
     MagnifyingGlassIcon,
 } from "@heroicons/vue/24/outline";
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useVuelidate } from "@vuelidate/core";
 import { useValidationRules } from "@/Composables/useValidationRules";
 import { useFormatDate } from "@/Composables/useFormatDate";
@@ -22,6 +22,19 @@ const props = defineProps({
     documents: Object,
     customers: Array,
     sessions: Array,
+    filters: Object,
+});
+
+const searchQuery = ref(props.filters?.search || "");
+let searchTimeout = null;
+watch(searchQuery, (value) => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        router.get(route('admin.documents.index'), { search: value }, {
+            preserveState: true,
+            replace: true
+        });
+    }, 300);
 });
 
 const isModalOpen = ref(false);
@@ -126,6 +139,7 @@ const getIcon = (type) => {
                     />
                     <input
                         type="text"
+                        v-model="searchQuery"
                         class="w-full h-12 pl-11 pr-4 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-600 text-base placeholder:text-slate-400 transition-all"
                         placeholder="Search documents..."
                     />

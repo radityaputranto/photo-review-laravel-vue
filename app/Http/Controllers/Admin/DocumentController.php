@@ -19,11 +19,23 @@ class DocumentController extends Controller
         $this->driveService = $driveService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $documents = Document::with(['customer', 'session'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
+        $query = Document::with(['customer', 'session']);
+
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where('title', 'like', "%{$search}%")
+                  ->orWhere('type', 'like', "%{$search}%")
+                  ->orWhereHas('customer', function ($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('session', function ($q) use ($search) {
+                      $q->where('title', 'like', "%{$search}%");
+                  });
+        }
+
+        $documents = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
 
         $customers = User::where('role', 'customer')->orderBy('name')->get();
         $sessions = PhotoSession::orderBy('title')->get(['id', 'title', 'customer_id']);
@@ -32,6 +44,7 @@ class DocumentController extends Controller
             'documents' => $documents,
             'customers' => $customers,
             'sessions' => $sessions,
+            'filters' => $request->only('search')
         ]);
     }
 

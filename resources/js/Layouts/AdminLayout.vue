@@ -9,7 +9,7 @@ import {
     CameraIcon,
     Bars3Icon,
 } from '@heroicons/vue/24/outline'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const page = usePage()
 const user = page.props.auth.user
@@ -38,12 +38,28 @@ onUnmounted(() => {
     window.removeEventListener('resize', checkWindowSize)
 })
 
-const navItems = [
-    { label: 'Dashboard', href: route('admin.dashboard'), icon: HomeIcon },
-    { label: 'Sessions', href: route('admin.sessions.index'), icon: CalendarIcon },
-    { label: 'Customers', href: route('admin.customers.index'), icon: UsersIcon },
-    { label: 'Documents', href: route('admin.documents.index'), icon: DocumentTextIcon },
-]
+const navItems = computed(() => {
+    let items = [
+        { label: 'Dashboard', href: route('admin.dashboard'), icon: HomeIcon },
+        { label: 'Sessions', href: route('admin.sessions.index'), icon: CalendarIcon },
+    ]
+    
+    if (user.role === 'admin' || user.role === 'super_admin') {
+        items.push({ label: 'Customers', href: route('admin.customers.index'), icon: UsersIcon })
+        items.push({ label: 'Documents', href: route('admin.documents.index'), icon: DocumentTextIcon })
+    }
+    
+    return items
+})
+
+const displayRole = computed(() => {
+    switch (user.role) {
+        case 'super_admin': return 'Super Administrator'
+        case 'admin': return 'Administrator'
+        case 'photographer': return 'Photographer'
+        default: return 'User'
+    }
+})
 
 const isActive = (href) => {
     const path = href.replace(/^.*\/\/[^\/]+/, '')
@@ -90,7 +106,7 @@ const isActive = (href) => {
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-bold text-slate-900 truncate">{{ user.name }}</p>
-                    <p class="text-xs text-slate-500 font-medium truncate">Administrator</p>
+                    <p class="text-xs text-slate-500 font-medium truncate">{{ displayRole }}</p>
                 </div>
                 <Link
                     :href="route('logout')"

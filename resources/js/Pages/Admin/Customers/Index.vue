@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed } from "vue";
-import { Head, useForm, Link } from "@inertiajs/vue3";
+import { ref, computed, watch } from "vue";
+import { Head, useForm, Link, router } from "@inertiajs/vue3";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 import Modal from "@/Components/Modal.vue";
 import FormField from "@/Components/FormField.vue";
@@ -15,12 +15,21 @@ import { useValidationRules } from "@/Composables/useValidationRules";
 
 const props = defineProps({
     customers: Object,
+    filters: Object,
 });
 
 const isModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
 const editingCustomer = ref(null);
 const deletingCustomer = ref(null);
+const searchQuery = ref(props.filters?.search || "");
+
+watch(searchQuery, (value) => {
+    router.get(route('admin.customers.index'), { search: value }, {
+        preserveState: true,
+        replace: true
+    });
+});
 
 const form = useForm({
     name: "",
@@ -139,6 +148,7 @@ const toggleActive = (customer) => {
                     />
                     <input
                         type="text"
+                        v-model="searchQuery"
                         class="w-full h-12 pl-11 pr-4 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-600 text-base placeholder:text-slate-400 transition-all"
                         placeholder="Search customers..."
                     />
@@ -223,6 +233,11 @@ const toggleActive = (customer) => {
                                 >
                                     <TrashIcon class="w-5 h-5 inline-block" />
                                 </button>
+                            </td>
+                        </tr>
+                        <tr v-if="!customers.data.length">
+                            <td colspan="4" class="px-6 py-12 text-center text-slate-500">
+                                No customers found.
                             </td>
                         </tr>
                     </tbody>

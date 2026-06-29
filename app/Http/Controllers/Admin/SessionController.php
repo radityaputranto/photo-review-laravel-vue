@@ -18,14 +18,24 @@ class SessionController extends Controller
         $this->driveService = $driveService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $sessions = PhotoSession::with('customer')
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $query = PhotoSession::with('customer');
+
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where('title', 'like', "%{$search}%")
+                  ->orWhereHas('customer', function ($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                  });
+        }
+
+        $sessions = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
 
         return Inertia::render('Admin/Sessions/Index', [
-            'sessions' => $sessions
+            'sessions' => $sessions,
+            'filters' => $request->only('search')
         ]);
     }
 

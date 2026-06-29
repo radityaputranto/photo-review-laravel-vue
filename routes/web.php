@@ -37,8 +37,8 @@ Route::middleware(['auth', 'role:customer'])->prefix('customer')->name('customer
         ->name('documents.preview');
 });
 
-// ─── Admin ───────────────────────────────────────────────────────────────────
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+// ─── Admin & Photographer ───────────────────────────────────────────────────────
+Route::middleware(['auth', 'role:admin,photographer'])->prefix('admin')->name('admin.')->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])
@@ -61,20 +61,23 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/sessions/{session}/selections/reset', [\App\Http\Controllers\Admin\SelectionController::class, 'reset'])
         ->name('sessions.selections.reset');
 
-    // Documents
-    Route::get('/documents', [\App\Http\Controllers\Admin\DocumentController::class, 'index'])
-        ->name('documents.index');
+    // ─── Admin Only ─────────────────────────────────────────────────────────────
+    Route::middleware(['role:admin'])->group(function () {
+        // Documents
+        Route::get('/documents', [\App\Http\Controllers\Admin\DocumentController::class, 'index'])
+            ->name('documents.index');
 
-    Route::post('/documents', [\App\Http\Controllers\Admin\DocumentController::class, 'store'])
-        ->name('documents.store');
+        Route::post('/documents', [\App\Http\Controllers\Admin\DocumentController::class, 'store'])
+            ->name('documents.store');
 
-    Route::delete('/documents/{document}', [\App\Http\Controllers\Admin\DocumentController::class, 'destroy'])
-        ->name('documents.destroy');
+        Route::delete('/documents/{document}', [\App\Http\Controllers\Admin\DocumentController::class, 'destroy'])
+            ->name('documents.destroy');
 
-    // Customers
-    Route::resource('customers', \App\Http\Controllers\Admin\CustomerController::class)
-        ->only(['index', 'store', 'update', 'destroy']);
+        // Customers
+        Route::resource('customers', \App\Http\Controllers\Admin\CustomerController::class)
+            ->only(['index', 'store', 'update', 'destroy']);
 
-    Route::patch('/customers/{customer}/toggle-active', [\App\Http\Controllers\Admin\CustomerController::class, 'toggleActive'])
-        ->name('customers.toggle-active');
+        Route::patch('/customers/{customer}/toggle-active', [\App\Http\Controllers\Admin\CustomerController::class, 'toggleActive'])
+            ->name('customers.toggle-active');
+    });
 });

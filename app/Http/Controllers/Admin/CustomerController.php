@@ -11,14 +11,23 @@ use Inertia\Inertia;
 
 class CustomerController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $customers = User::where('role', 'customer')
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $query = User::where('role', 'customer');
+
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $customers = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
 
         return Inertia::render('Admin/Customers/Index', [
-            'customers' => $customers
+            'customers' => $customers,
+            'filters' => $request->only('search')
         ]);
     }
 
