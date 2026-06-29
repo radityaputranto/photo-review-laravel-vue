@@ -40,23 +40,32 @@ const isComplete = computed(() => props.currentCount >= props.maxCount)
                 </div>
 
                 <div class="flex items-center gap-4">
-                    <span v-if="isComplete && !isSubmitted" class="hidden sm:flex items-center text-sm font-medium text-green-600">
-                        <CheckIcon class="w-5 h-5 mr-1" />
-                        Pilihan Selesai
-                    </span>
-                    <Link
-                        v-if="!isSubmitted"
-                        :href="route('customer.sessions.review', sessionId)"
-                        class="inline-flex items-center px-6 py-2.5 rounded-xl text-sm font-medium transition-colors shadow-sm"
-                        :class="isComplete 
-                            ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                            : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'"
-                    >
-                        Review & Kirim
-                    </Link>
-                    <span v-else class="inline-flex items-center px-6 py-2.5 rounded-xl text-sm font-medium bg-slate-100 text-slate-500">
-                        Sesi Terkunci
-                    </span>
+                    <template v-if="!isSubmitted">
+                        <span v-if="isComplete" class="hidden sm:flex items-center text-sm font-medium text-green-600">
+                            <CheckIcon class="w-5 h-5 mr-1" />
+                            Pilihan Selesai
+                        </span>
+                        <Link
+                            :href="route('customer.sessions.review', sessionId)"
+                            class="inline-flex items-center px-6 py-2.5 rounded-xl text-sm font-medium transition-colors shadow-sm"
+                            :class="isComplete 
+                                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                                : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'"
+                        >
+                            Review & Kirim
+                        </Link>
+                    </template>
+                    <template v-else>
+                        <span class="hidden sm:inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium bg-slate-100 text-slate-500">
+                            Sesi Terkunci
+                        </span>
+                        <Link
+                            :href="route('customer.sessions.review', sessionId)"
+                            class="inline-flex items-center px-6 py-2.5 rounded-xl text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors shadow-sm"
+                        >
+                            Lihat Pilihan Anda
+                        </Link>
+                    </template>
                 </div>
             </div>
         </div>

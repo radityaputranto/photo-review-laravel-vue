@@ -2,6 +2,9 @@
 import { Head, Link, useForm } from '@inertiajs/vue3'
 import CustomerLayout from '@/Layouts/CustomerLayout.vue'
 import { ArrowLeftIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
+import Modal from '@/Components/Modal.vue'
+import SecondaryButton from '@/Components/SecondaryButton.vue'
+import { ref } from 'vue'
 
 const props = defineProps({
     session: Object,
@@ -10,11 +13,18 @@ const props = defineProps({
 })
 
 const form = useForm({})
+const isConfirmModalOpen = ref(false)
 
 const submitSelections = () => {
-    if (confirm('Apakah Anda yakin ingin mengirim pilihan ini? Anda tidak dapat mengubahnya lagi setelah dikirim.')) {
-        form.post(route('customer.sessions.submit', props.session.id))
-    }
+    isConfirmModalOpen.value = true
+}
+
+const confirmSubmit = () => {
+    form.post(route('customer.sessions.submit', props.session.id), {
+        onSuccess: () => {
+            isConfirmModalOpen.value = false
+        }
+    })
 }
 </script>
 
@@ -47,8 +57,20 @@ const submitSelections = () => {
             
             <div class="p-6">
                 <ul v-if="selections.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    <li v-for="sel in selections" :key="sel.id" class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex flex-col items-center justify-center text-center">
-                        <span class="text-sm font-medium text-slate-700 break-all">{{ sel.file_name }}</span>
+                    <li v-for="sel in selections" :key="sel.id" class="bg-white rounded-lg border border-slate-200 overflow-hidden flex flex-col shadow-sm hover:shadow transition-shadow">
+                        <div class="aspect-square bg-slate-100 relative group">
+                            <img v-if="sel.thumbnail_url"
+                                 :src="sel.thumbnail_url" 
+                                 :alt="sel.file_name"
+                                 class="w-full h-full object-cover" 
+                                 loading="lazy" />
+                            <div v-else class="w-full h-full flex items-center justify-center text-slate-400">
+                                <span class="text-xs">No preview</span>
+                            </div>
+                        </div>
+                        <div class="p-3 text-center border-t border-slate-100 bg-slate-50">
+                            <span class="text-sm font-medium text-slate-700 break-all line-clamp-1" :title="sel.file_name">{{ sel.file_name }}</span>
+                        </div>
                     </li>
                 </ul>
                 <div v-else class="text-center py-8 text-slate-500">
@@ -78,5 +100,26 @@ const submitSelections = () => {
                 </div>
             </div>
         </div>
+
+
+        <!-- Confirm Modal -->
+        <Modal :show="isConfirmModalOpen" @close="isConfirmModalOpen = false" maxWidth="sm">
+            <div class="p-6 text-center">
+                <ExclamationTriangleIcon class="mx-auto mb-4 text-slate-400 w-12 h-12" />
+                <h3 class="mb-5 text-lg font-normal text-slate-500">Apakah Anda yakin ingin mengirim pilihan ini? Anda tidak dapat mengubahnya lagi setelah dikirim.</h3>
+                <div class="flex justify-center gap-3">
+                    <button 
+                        @click="confirmSubmit"
+                        :disabled="form.processing"
+                        class="text-white bg-blue-600 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center disabled:opacity-50"
+                    >
+                        Ya, Kirim Pilihan
+                    </button>
+                    <SecondaryButton @click="isConfirmModalOpen = false">
+                        Batal
+                    </SecondaryButton>
+                </div>
+            </div>
+        </Modal>
     </CustomerLayout>
 </template>

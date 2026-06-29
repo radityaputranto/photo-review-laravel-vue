@@ -9,6 +9,11 @@ const navItems = [
     { label: 'Dashboard', href: route('customer.dashboard') },
     { label: 'Dokumen', href: route('customer.documents.index') },
 ]
+
+const isExactActive = (href) => {
+    const path = href.replace(/^.*\/\/[^\/]+/, '')
+    return page.url === path
+}
 </script>
 
 <template>
@@ -32,7 +37,7 @@ const navItems = [
                             :key="item.href"
                             :href="item.href"
                             class="px-3 py-2 text-sm font-medium rounded-lg transition-colors"
-                            :class="$page.url === item.href.replace(page.props.ziggy.url, '')
+                            :class="isExactActive(item.href)
                                 ? 'text-blue-600 bg-blue-50'
                                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'"
                         >

@@ -8,9 +8,16 @@ use App\Models\PhotoSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
+use App\Services\GoogleDriveService;
 
 class SelectionController extends Controller
 {
+    protected GoogleDriveService $driveService;
+
+    public function __construct(GoogleDriveService $driveService)
+    {
+        $this->driveService = $driveService;
+    }
     public function toggle(Request $request, PhotoSession $session)
     {
         Gate::authorize('select', $session);
@@ -55,6 +62,20 @@ class SelectionController extends Controller
         Gate::authorize('view', $session);
 
         $selections = $session->photoSelections()->where('customer_id', request()->user()->id)->get();
+        
+        $photos = [];
+        try {
+            $photos = $this->driveService->getPhotosFromFolder($session->drive_folder_id);
+        } catch (\Exception $e) {
+            //
+        }
+        
+        $photosById = collect($photos)->keyBy('id');
+        
+        $selections = $selections->map(function ($sel) use ($photosById) {
+            $sel->thumbnail_url = $photosById->get($sel->drive_file_id)['thumbnail'] ?? null;
+            return $sel;
+        });
 
         return Inertia::render('Customer/SelectionReview', [
             'session' => $session,

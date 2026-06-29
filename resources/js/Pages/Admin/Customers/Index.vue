@@ -1,15 +1,15 @@
 <script setup>
-import { ref } from 'vue'
-import { Head, useForm } from '@inertiajs/vue3'
+import { ref, computed } from 'vue'
+import { Head, useForm, Link } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Modal from '@/Components/Modal.vue'
-import InputError from '@/Components/InputError.vue'
-import InputLabel from '@/Components/InputLabel.vue'
-import TextInput from '@/Components/TextInput.vue'
+import FormField from '@/Components/FormField.vue'
 import PrimaryButton from '@/Components/PrimaryButton.vue'
 import SecondaryButton from '@/Components/SecondaryButton.vue'
 import DangerButton from '@/Components/DangerButton.vue'
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import { useVuelidate } from '@vuelidate/core'
+import { useValidationRules } from '@/Composables/useValidationRules'
 
 const props = defineProps({
     customers: Object,
@@ -27,6 +27,19 @@ const form = useForm({
     password_confirmation: '',
 })
 
+const { rules, custom } = useValidationRules()
+const validationRules = computed(() => ({
+    name: { required: rules.required },
+    email: rules.email,
+    password: editingCustomer.value ? {} : rules.password,
+    password_confirmation: editingCustomer.value ? {} : {
+        required: rules.required,
+        sameAsPassword: custom.sameAs(computed(() => form.password), 'Password')
+    }
+}))
+
+const v$ = useVuelidate(validationRules, form)
+
 const openModal = (customer = null) => {
     editingCustomer.value = customer
     if (customer) {
@@ -36,6 +49,7 @@ const openModal = (customer = null) => {
         form.reset()
     }
     form.clearErrors()
+    v$.value.$reset()
     isModalOpen.value = true
 }
 
@@ -47,7 +61,10 @@ const closeModal = () => {
     }, 200)
 }
 
-const submit = () => {
+const submit = async () => {
+    const isFormValid = await v$.value.$validate()
+    if (!isFormValid) return
+
     if (editingCustomer.value) {
         form.put(route('admin.customers.update', editingCustomer.value.id), {
             onSuccess: () => closeModal(),
@@ -159,54 +176,46 @@ const toggleActive = (customer) => {
                     {{ editingCustomer ? 'Edit Customer' : 'Add Customer' }}
                 </h2>
                 
-                <form @submit.prevent="submit" class="space-y-4">
-                    <div>
-                        <InputLabel for="name" value="Name" />
-                        <TextInput
-                            id="name"
-                            v-model="form.name"
-                            type="text"
-                            class="mt-1 block w-full"
-                            required
-                        />
-                        <InputError :message="form.errors.name" class="mt-2" />
-                    </div>
+                <form @submit.prevent="submit" class="p-6 space-y-6">
+                    <FormField
+                        id="name"
+                        label="Name"
+                        type="text"
+                        v-model="form.name"
+                        required
+                        @blur="v$.name.$touch()"
+                        :error="v$.name.$error ? v$.name.$errors[0].$message : form.errors.name"
+                    />
 
-                    <div>
-                        <InputLabel for="email" value="Email" />
-                        <TextInput
-                            id="email"
-                            v-model="form.email"
-                            type="email"
-                            class="mt-1 block w-full"
-                            required
-                        />
-                        <InputError :message="form.errors.email" class="mt-2" />
-                    </div>
+                    <FormField
+                        id="email"
+                        label="Email"
+                        type="email"
+                        v-model="form.email"
+                        required
+                        @blur="v$.email.$touch()"
+                        :error="v$.email.$error ? v$.email.$errors[0].$message : form.errors.email"
+                    />
 
-                    <div>
-                        <InputLabel for="password" :value="editingCustomer ? 'Password (leave blank to keep current)' : 'Password'" />
-                        <TextInput
-                            id="password"
-                            v-model="form.password"
-                            type="password"
-                            class="mt-1 block w-full"
-                            :required="!editingCustomer"
-                        />
-                        <InputError :message="form.errors.password" class="mt-2" />
-                    </div>
+                    <FormField
+                        id="password"
+                        label="Password"
+                        type="password"
+                        v-model="form.password"
+                        :required="!editingCustomer"
+                        @blur="v$.password.$touch()"
+                        :error="v$.password.$error ? v$.password.$errors[0].$message : form.errors.password"
+                    />
 
-                    <div>
-                        <InputLabel for="password_confirmation" value="Confirm Password" />
-                        <TextInput
-                            id="password_confirmation"
-                            v-model="form.password_confirmation"
-                            type="password"
-                            class="mt-1 block w-full"
-                            :required="!editingCustomer"
-                        />
-                        <InputError :message="form.errors.password_confirmation" class="mt-2" />
-                    </div>
+                    <FormField
+                        id="password_confirmation"
+                        label="Confirm Password"
+                        type="password"
+                        v-model="form.password_confirmation"
+                        :required="!editingCustomer"
+                        @blur="v$.password_confirmation.$touch()"
+                        :error="v$.password_confirmation.$error ? v$.password_confirmation.$errors[0].$message : form.errors.password_confirmation"
+                    />
 
                     <div class="mt-6 flex justify-end gap-3">
                         <SecondaryButton @click="closeModal">Cancel</SecondaryButton>

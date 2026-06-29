@@ -1,8 +1,10 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3'
+import { useFormatDate } from '@/Composables/useFormatDate'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { ArrowLeftIcon, PencilIcon, CheckCircleIcon, DocumentCheckIcon } from '@heroicons/vue/24/outline'
 
+const { formatDate } = useFormatDate()
 const props = defineProps({
     session: Object,
     totalPhotos: Number,
@@ -43,7 +45,7 @@ const props = defineProps({
                     <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6">
                         <div>
                             <dt class="text-sm font-medium text-slate-500">Shoot Date</dt>
-                            <dd class="mt-1 text-base text-slate-900">{{ session.shoot_date }}</dd>
+                            <dd class="mt-1 text-base text-slate-900">{{ formatDate(session.shoot_date) }}</dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-slate-500">Status</dt>

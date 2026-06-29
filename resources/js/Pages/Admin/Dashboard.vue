@@ -1,8 +1,11 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3'
+import { useFormatDate } from '@/Composables/useFormatDate'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import StatsCard from '@/Components/Admin/StatsCard.vue'
 import { UsersIcon, CameraIcon, CheckBadgeIcon, ArchiveBoxArrowDownIcon } from '@heroicons/vue/24/outline'
+
+const { formatDate } = useFormatDate()
 
 defineProps({
     stats: Object,
@@ -60,7 +63,7 @@ defineProps({
                             {{ session.customer?.name }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-slate-600">
-                            {{ session.shoot_date }}
+                            {{ formatDate(session.shoot_date) }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"

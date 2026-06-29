@@ -1,7 +1,10 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3'
 import CustomerLayout from '@/Layouts/CustomerLayout.vue'
-import { PhotoIcon, CalendarIcon } from '@heroicons/vue/24/outline'
+import { PhotoIcon, ClockIcon, CheckCircleIcon, DocumentIcon, CalendarIcon } from '@heroicons/vue/24/outline'
+import { useFormatDate } from '@/Composables/useFormatDate'
+
+const { formatDate } = useFormatDate()
 
 defineProps({
     activeSessions: Array,
@@ -35,7 +38,7 @@ defineProps({
                 <div class="p-6 flex-1">
                     <div class="flex items-center gap-2 text-sm text-slate-500 mb-2">
                         <CalendarIcon class="w-4 h-4" />
-                        {{ session.shoot_date }}
+                        {{ formatDate(session.shoot_date) }}
                     </div>
                     <h3 class="text-lg font-bold text-slate-900 mb-2">{{ session.title }}</h3>
                     <p class="text-sm text-slate-600">
@@ -64,7 +67,7 @@ defineProps({
                 <li v-for="session in completedSessions" :key="session.id" class="p-4 sm:px-6 hover:bg-slate-50 transition-colors flex items-center justify-between">
                     <div>
                         <p class="font-medium text-slate-900">{{ session.title }}</p>
-                        <p class="text-sm text-slate-500">{{ session.shoot_date }}</p>
+                        <p class="text-sm text-slate-500">{{ formatDate(session.shoot_date) }}</p>
                     </div>
                     <div class="flex flex-col items-end gap-2">
                         <span class="px-2.5 py-0.5 rounded-full text-xs font-medium"
@@ -72,9 +75,14 @@ defineProps({
                         >
                             {{ session.status === 'delivered' ? 'Selesai & Dikirim' : 'Menunggu Edit' }}
                         </span>
-                        <a v-if="session.download_link" :href="session.download_link" target="_blank" class="text-sm font-medium text-blue-600 hover:underline">
-                            Download Hasil
-                        </a>
+                        <div class="flex items-center gap-3 mt-1">
+                            <Link :href="route('customer.sessions.gallery', session.id)" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">
+                                Lihat Detail
+                            </Link>
+                            <a v-if="session.download_link" :href="session.download_link" target="_blank" class="text-sm font-medium text-blue-600 hover:underline">
+                                Download Hasil
+                            </a>
+                        </div>
                     </div>
                 </li>
             </ul>

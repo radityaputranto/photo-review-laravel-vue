@@ -5,6 +5,7 @@ import { ArrowLeftIcon, CheckCircleIcon, ExclamationCircleIcon } from '@heroicon
 import StickyBar from '@/Components/Gallery/StickyBar.vue'
 import PhotoCard from '@/Components/Gallery/PhotoCard.vue'
 import { ref } from 'vue'
+import axios from 'axios'
 
 const props = defineProps({
     session: Object,
@@ -28,19 +29,12 @@ const toggleSelection = async (photo) => {
     loadingToggleId.value = photo.id
 
     try {
-        const response = await fetch(route('customer.sessions.select', props.session.id), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-            },
-            body: JSON.stringify({ 
-                drive_file_id: photo.id,
-                file_name: photo.name 
-            })
+        const response = await axios.post(route('customer.sessions.select', props.session.id), {
+            drive_file_id: photo.id,
+            file_name: photo.name 
         })
         
-        const data = await response.json()
+        const data = response.data
         
         if (data.status === 'attached') {
             selected.value.push(photo.id)

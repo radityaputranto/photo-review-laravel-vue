@@ -46,16 +46,22 @@ class GoogleDriveService
         return Cache::remember($cacheKey, now()->addMinutes($minutes), function () use ($folderId) {
             $results = $this->drive->files->listFiles([
                 'q'      => "'{$folderId}' in parents and mimeType contains 'image/' and trashed = false",
-                'fields' => 'files(id, name, mimeType, size, createdTime)',
+                'fields' => 'files(id, name, mimeType, size, createdTime, thumbnailLink)',
                 'orderBy' => 'name',
             ]);
 
             return array_map(function ($file) {
+                $thumbUrl = $file->getThumbnailLink();
+                // Replace =s220 with =s400 for a sharper thumbnail
+                $thumbnail = $thumbUrl ? preg_replace('/=s\d+$/', '=s600', $thumbUrl) : $this->getThumbnailUrl($file->getId());
+                // Use =s0 for original resolution full image preview
+                $viewUrl = $thumbUrl ? preg_replace('/=s\d+$/', '=s0', $thumbUrl) : "https://drive.google.com/file/d/{$file->getId()}/view";
+
                 return [
                     'id'           => $file->getId(),
                     'name'         => $file->getName(),
-                    'thumbnail'    => $this->getThumbnailUrl($file->getId()),
-                    'view_url'     => "https://drive.google.com/file/d/{$file->getId()}/view",
+                    'thumbnail'    => $thumbnail,
+                    'view_url'     => $viewUrl,
                 ];
             }, $results->getFiles());
         });

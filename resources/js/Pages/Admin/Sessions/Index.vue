@@ -1,5 +1,6 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3'
+import { useFormatDate } from '@/Composables/useFormatDate'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import PrimaryButton from '@/Components/PrimaryButton.vue'
 import { PlusIcon, EyeIcon, PencilIcon, TrashIcon, CalendarIcon } from '@heroicons/vue/24/outline'
@@ -8,6 +9,8 @@ import DangerButton from '@/Components/DangerButton.vue'
 import SecondaryButton from '@/Components/SecondaryButton.vue'
 import { ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
+
+const { formatDate } = useFormatDate()
 
 defineProps({
     sessions: Object,
@@ -71,7 +74,7 @@ const deleteSession = () => {
                         <td class="px-6 py-4 whitespace-nowrap text-slate-600">
                             <div class="flex items-center gap-1.5">
                                 <CalendarIcon class="w-4 h-4 text-slate-400" />
-                                {{ session.shoot_date }}
+                                {{ formatDate(session.shoot_date) }}
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">

@@ -2,14 +2,17 @@
 import { Head, useForm } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Modal from '@/Components/Modal.vue'
-import InputError from '@/Components/InputError.vue'
-import InputLabel from '@/Components/InputLabel.vue'
-import TextInput from '@/Components/TextInput.vue'
+import FormField from '@/Components/FormField.vue'
 import PrimaryButton from '@/Components/PrimaryButton.vue'
 import SecondaryButton from '@/Components/SecondaryButton.vue'
 import DangerButton from '@/Components/DangerButton.vue'
 import { PlusIcon, TrashIcon, DocumentTextIcon, DocumentIcon, CurrencyDollarIcon } from '@heroicons/vue/24/outline'
 import { ref, computed } from 'vue'
+import { useVuelidate } from '@vuelidate/core'
+import { useValidationRules } from '@/Composables/useValidationRules'
+import { useFormatDate } from '@/Composables/useFormatDate'
+
+const { formatDate } = useFormatDate()
 
 const props = defineProps({
     documents: Object,
@@ -29,6 +32,16 @@ const form = useForm({
     drive_url: '',
 })
 
+const { rules } = useValidationRules()
+const validationRules = computed(() => ({
+    title: { required: rules.required },
+    customer_id: { required: rules.required },
+    type: { required: rules.required },
+    drive_url: { required: rules.required, url: rules.url }
+}))
+
+const v$ = useVuelidate(validationRules, form)
+
 // Filter sessions based on selected customer
 const filteredSessions = computed(() => {
     if (!form.customer_id) return []
@@ -38,10 +51,14 @@ const filteredSessions = computed(() => {
 const openModal = () => {
     form.reset()
     form.clearErrors()
+    v$.value.$reset()
     isModalOpen.value = true
 }
 
-const submit = () => {
+const submit = async () => {
+    const isFormValid = await v$.value.$validate()
+    if (!isFormValid) return
+
     form.post(route('admin.documents.store'), {
         onSuccess: () => {
             isModalOpen.value = false
@@ -114,7 +131,7 @@ const getIcon = (type) => {
                             {{ doc.session?.title || '-' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-slate-500 text-sm">
-                            {{ new Date(doc.created_at).toLocaleDateString() }}
+                            {{ formatDate(doc.created_at) }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <a :href="'https://drive.google.com/file/d/' + doc.drive_file_id + '/view'" target="_blank" class="text-blue-600 hover:text-blue-900 mr-4">
@@ -140,62 +157,72 @@ const getIcon = (type) => {
                 <h2 class="text-lg font-medium text-slate-900 mb-4">Add Document</h2>
                 
                 <form @submit.prevent="submit" class="space-y-4">
-                    <div>
-                        <InputLabel for="title" value="Document Title" />
-                        <TextInput
-                            id="title"
-                            v-model="form.title"
-                            type="text"
-                            class="mt-1 block w-full"
-                            placeholder="e.g. Invoice Wedding 50%"
-                            required
-                        />
-                        <InputError :message="form.errors.title" class="mt-2" />
-                    </div>
+                    <FormField
+                        id="title"
+                        label="Document Title"
+                        type="text"
+                        v-model="form.title"
+                        placeholder="e.g. Invoice Wedding 50%"
+                        required
+                        @blur="v$.title.$touch()"
+                        :error="v$.title.$error ? v$.title.$errors[0].$message : form.errors.title"
+                    />
 
                     <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <InputLabel for="type" value="Type" />
-                            <select id="type" v-model="form.type" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                                <option value="invoice">Invoice</option>
-                                <option value="contract">Contract</option>
-                                <option value="other">Other</option>
-                            </select>
-                            <InputError :message="form.errors.type" class="mt-2" />
-                        </div>
-
-                        <div>
-                            <InputLabel for="customer_id" value="Customer" />
-                            <select id="customer_id" v-model="form.customer_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                                <option value="" disabled>Select Customer</option>
-                                <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
-                            </select>
-                            <InputError :message="form.errors.customer_id" class="mt-2" />
-                        </div>
-                    </div>
-
-                    <div>
-                        <InputLabel for="session_id" value="Related Session (Optional)" />
-                        <select id="session_id" v-model="form.session_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" :disabled="!form.customer_id">
-                            <option value="">None</option>
-                            <option v-for="s in filteredSessions" :key="s.id" :value="s.id">{{ s.title }}</option>
-                        </select>
-                        <InputError :message="form.errors.session_id" class="mt-2" />
-                    </div>
-
-                    <div>
-                        <InputLabel for="drive_url" value="Google Drive File URL" />
-                        <TextInput
-                            id="drive_url"
-                            v-model="form.drive_url"
-                            type="url"
-                            class="mt-1 block w-full"
-                            placeholder="https://drive.google.com/file/d/..."
+                        <FormField
+                            id="type"
+                            label="Type"
                             required
-                        />
-                        <p class="mt-1 text-xs text-slate-500">Must be a direct link to the file. Ensure sharing permissions are correct.</p>
-                        <InputError :message="form.errors.drive_url" class="mt-2" />
+                            :error="v$.type.$error ? v$.type.$errors[0].$message : form.errors.type"
+                        >
+                            <template #default="{ errorClass }">
+                                <select id="type" v-model="form.type" class="mt-1 block w-full rounded-md shadow-sm transition-colors bg-gray-50 text-gray-900" :class="errorClass" @blur="v$.type.$touch()">
+                                    <option value="invoice">Invoice</option>
+                                    <option value="contract">Contract</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </template>
+                        </FormField>
+
+                        <FormField
+                            id="customer_id"
+                            label="Customer"
+                            required
+                            :error="v$.customer_id.$error ? v$.customer_id.$errors[0].$message : form.errors.customer_id"
+                        >
+                            <template #default="{ errorClass }">
+                                <select id="customer_id" v-model="form.customer_id" class="mt-1 block w-full rounded-md shadow-sm transition-colors bg-gray-50 text-gray-900" :class="errorClass" @blur="v$.customer_id.$touch()">
+                                    <option value="" disabled>Select Customer</option>
+                                    <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
+                                </select>
+                            </template>
+                        </FormField>
                     </div>
+
+                    <FormField
+                        id="session_id"
+                        label="Related Session (Optional)"
+                        :error="form.errors.session_id"
+                    >
+                        <template #default="{ errorClass }">
+                            <select id="session_id" v-model="form.session_id" class="mt-1 block w-full rounded-md shadow-sm transition-colors bg-gray-50 text-gray-900" :class="errorClass" :disabled="!form.customer_id">
+                                <option value="">None</option>
+                                <option v-for="s in filteredSessions" :key="s.id" :value="s.id">{{ s.title }}</option>
+                            </select>
+                        </template>
+                    </FormField>
+
+                    <FormField
+                        id="drive_url"
+                        label="Google Drive File URL"
+                        type="url"
+                        v-model="form.drive_url"
+                        placeholder="https://drive.google.com/file/d/..."
+                        required
+                        @blur="v$.drive_url.$touch()"
+                        :error="v$.drive_url.$error ? v$.drive_url.$errors[0].$message : form.errors.drive_url"
+                    />
+                    <p class="mt-1 text-xs text-slate-500">Must be a direct link to the file. Ensure sharing permissions are correct.</p>
 
                     <div class="mt-6 flex justify-end gap-3">
                         <SecondaryButton type="button" @click="isModalOpen = false">Cancel</SecondaryButton>

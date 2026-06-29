@@ -2,6 +2,9 @@
 import { Head, Link } from '@inertiajs/vue3'
 import CustomerLayout from '@/Layouts/CustomerLayout.vue'
 import { DocumentTextIcon, DocumentIcon, CurrencyDollarIcon, EyeIcon, ArrowDownTrayIcon } from '@heroicons/vue/24/outline'
+import { useFormatDate } from '@/Composables/useFormatDate'
+
+const { formatDate } = useFormatDate()
 
 defineProps({
     documents: Array,
@@ -40,7 +43,7 @@ const getIcon = (type) => {
                             <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-slate-500">
                                 <span class="uppercase tracking-wider text-xs font-semibold">{{ doc.type }}</span>
                                 <span v-if="doc.session">&bull; Sesi: {{ doc.session.title }}</span>
-                                <span>&bull; {{ new Date(doc.created_at).toLocaleDateString() }}</span>
+                                <span>&bull; {{ formatDate(doc.created_at) }}</span>
                             </div>
                         </div>
                     </div>
