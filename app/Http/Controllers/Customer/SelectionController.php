@@ -94,8 +94,8 @@ class SelectionController extends Controller
             ->where('customer_id', $user->id)
             ->count();
 
-        if ($currentCount < $session->max_selections) {
-            return redirect()->back()->withErrors(['message' => "You must select {$session->max_selections} photos before submitting."]);
+        if ($currentCount === 0) {
+            return redirect()->back()->withErrors(['message' => "Anda harus memilih setidaknya 1 foto sebelum mengirim."]);
         }
 
         // Lock the session

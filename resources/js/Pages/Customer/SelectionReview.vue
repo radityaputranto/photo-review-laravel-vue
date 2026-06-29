@@ -83,16 +83,16 @@ const confirmSubmit = () => {
                 <div v-if="selections.length < session.max_selections" class="flex items-start gap-3 p-4 bg-amber-50 text-amber-800 rounded-lg mb-4">
                     <ExclamationTriangleIcon class="w-5 h-5 shrink-0 mt-0.5" />
                     <p class="text-sm font-medium">
-                        Anda baru memilih {{ selections.length }} dari {{ session.max_selections }} foto. Harap lengkapi pilihan Anda sebelum mengirim.
+                        Anda baru memilih {{ selections.length }} dari {{ session.max_selections }} foto. Anda tetap bisa mengirim pilihan jika sudah selesai.
                     </p>
                 </div>
-                <div v-else class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                     <p class="text-sm text-slate-600">
                         Pastikan pilihan Anda sudah benar. Setelah dikirim, sesi akan dikunci.
                     </p>
                     <button 
                         @click="submitSelections"
-                        :disabled="form.processing"
+                        :disabled="form.processing || selections.length === 0"
                         class="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-xl shadow-sm transition-colors"
                     >
                         {{ form.processing ? 'Mengirim...' : 'Kirim Pilihan Final' }}
