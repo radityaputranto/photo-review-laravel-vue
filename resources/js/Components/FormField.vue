@@ -26,8 +26,8 @@ const hasError = computed(() => !!props.error);
             {{ label }} <span v-if="required" class="text-red-500">*</span>
         </label>
         
-        <div v-if="$slots.default" class="mt-1 flex rounded-md shadow-sm">
-            <slot :has-error="hasError" :error-class="hasError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'" />
+        <div v-if="$slots.default" class="mt-1 flex">
+            <slot :has-error="hasError" :error-class="hasError ? 'ring-2 ring-red-500 focus:ring-red-500' : 'ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600'" />
         </div>
         <input
             v-else
@@ -36,11 +36,11 @@ const hasError = computed(() => !!props.error);
             :value="modelValue"
             @input="emit('update:modelValue', $event.target.value)"
             @blur="emit('blur', $event)"
-            class="mt-1 block w-full rounded-md shadow-sm transition-colors bg-gray-50 text-gray-900"
+            class="mt-1 block w-full h-12 px-4 rounded-xl transition-all bg-slate-50 text-slate-900 text-base placeholder:text-slate-400"
             :class="[
                 hasError 
-                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
-                    : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                    ? 'border-0 ring-2 ring-red-500 focus:ring-red-500 text-red-900' 
+                    : 'border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 focus:bg-white'
             ]"
             :placeholder="placeholder"
             :autofocus="autofocus"

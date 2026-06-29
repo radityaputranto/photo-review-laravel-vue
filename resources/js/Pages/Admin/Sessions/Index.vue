@@ -1,144 +1,245 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3'
-import { useFormatDate } from '@/Composables/useFormatDate'
-import AdminLayout from '@/Layouts/AdminLayout.vue'
-import PrimaryButton from '@/Components/PrimaryButton.vue'
-import { PlusIcon, EyeIcon, PencilIcon, TrashIcon, CalendarIcon } from '@heroicons/vue/24/outline'
-import Modal from '@/Components/Modal.vue'
-import DangerButton from '@/Components/DangerButton.vue'
-import SecondaryButton from '@/Components/SecondaryButton.vue'
-import { ref } from 'vue'
-import { useForm } from '@inertiajs/vue3'
+import { Head, Link } from "@inertiajs/vue3";
+import { useFormatDate } from "@/Composables/useFormatDate";
+import AdminLayout from "@/Layouts/AdminLayout.vue";
+import {
+    PlusIcon,
+    EyeIcon,
+    PencilIcon,
+    TrashIcon,
+    CalendarIcon,
+    UserIcon,
+    MagnifyingGlassIcon,
+} from "@heroicons/vue/24/outline";
+import Modal from "@/Components/Modal.vue";
+import DangerButton from "@/Components/DangerButton.vue";
+import SecondaryButton from "@/Components/SecondaryButton.vue";
+import { ref } from "vue";
+import { useForm } from "@inertiajs/vue3";
 
-const { formatDate } = useFormatDate()
+const { formatDate } = useFormatDate();
 
 defineProps({
     sessions: Object,
-})
+});
 
-const isDeleteModalOpen = ref(false)
-const deletingSession = ref(null)
-const form = useForm({})
+const isDeleteModalOpen = ref(false);
+const deletingSession = ref(null);
+const form = useForm({});
 
 const confirmDelete = (session) => {
-    deletingSession.value = session
-    isDeleteModalOpen.value = true
-}
+    deletingSession.value = session;
+    isDeleteModalOpen.value = true;
+};
 
 const deleteSession = () => {
-    form.delete(route('admin.sessions.destroy', deletingSession.value.id), {
+    form.delete(route("admin.sessions.destroy", deletingSession.value.id), {
         onSuccess: () => {
-            isDeleteModalOpen.value = false
-            deletingSession.value = null
-        }
-    })
-}
+            isDeleteModalOpen.value = false;
+            deletingSession.value = null;
+        },
+    });
+};
 </script>
 
 <template>
     <Head title="Photo Sessions" />
 
     <AdminLayout>
-        <div class="flex items-center justify-between mb-6">
-            <h1 class="text-2xl font-bold text-slate-900">Photo Sessions</h1>
-            <Link :href="route('admin.sessions.create')">
-                <PrimaryButton>
-                    <PlusIcon class="w-5 h-5 mr-2" />
+        <!-- Top Header -->
+        <header class="max-w-7xl mx-auto mb-8">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h1
+                        class="text-3xl font-bold text-slate-900 tracking-tight"
+                    >
+                        Sessions
+                    </h1>
+                    <p class="text-base text-slate-500 mt-1">
+                        Manage and track your photography projects
+                    </p>
+                </div>
+                <Link
+                    :href="route('admin.sessions.create')"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-sm font-medium flex items-center gap-2 transition-all shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-95"
+                >
+                    <PlusIcon class="w-5 h-5" />
                     New Session
-                </PrimaryButton>
-            </Link>
-        </div>
+                </Link>
+            </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <table class="min-w-full divide-y divide-slate-200">
-                <thead class="bg-slate-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Session</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Customer</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Shoot Date</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-slate-200">
-                    <tr v-for="session in sessions.data" :key="session.id">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="font-medium text-slate-900">{{ session.title }}</div>
-                            <div class="text-xs text-slate-500 max-w-[200px] truncate" :title="session.drive_folder_url">
-                                {{ session.drive_folder_url }}
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-slate-600">
-                            {{ session.customer?.name }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-slate-600">
-                            <div class="flex items-center gap-1.5">
-                                <CalendarIcon class="w-4 h-4 text-slate-400" />
-                                {{ formatDate(session.shoot_date) }}
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
-                                :class="{
-                                    'bg-amber-100 text-amber-800': session.status === 'active',
-                                    'bg-blue-100 text-blue-800': session.status === 'completed',
-                                    'bg-green-100 text-green-800': session.status === 'delivered',
-                                }"
+            <div
+                class="flex flex-wrap gap-4 items-center bg-white p-4 rounded-xl shadow-sm border border-slate-100"
+            >
+                <div class="relative flex-grow max-w-md">
+                    <MagnifyingGlassIcon
+                        class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"
+                    />
+                    <input
+                        type="text"
+                        class="w-full h-12 pl-11 pr-4 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-600 text-base placeholder:text-slate-400 transition-all"
+                        placeholder="Search sessions..."
+                    />
+                </div>
+                <div class="flex items-center gap-3">
+                    <label class="text-sm font-medium text-slate-500"
+                        >Filter by Status:</label
+                    >
+                    <select
+                        class="h-12 px-4 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-600 text-base min-w-[160px] cursor-pointer"
+                    >
+                        <option>All</option>
+                        <option>Active</option>
+                        <option>Completed</option>
+                        <option>Delivered</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sessions List Content -->
+        <section class="max-w-7xl mx-auto space-y-4 mb-12">
+            <template v-if="sessions.data.length">
+                <!-- Session Card -->
+                <div
+                    v-for="session in sessions.data"
+                    :key="session.id"
+                    class="group bg-white p-6 rounded-xl shadow-sm border border-transparent hover:border-slate-200 transition-all hover:scale-[1.01] hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6"
+                >
+                    <div class="flex-1 min-w-0 md:pr-8">
+                        <h3
+                            class="text-xl font-semibold text-slate-900 mb-1 truncate"
+                        >
+                            {{ session.title }}
+                        </h3>
+                        <div
+                            class="flex flex-wrap items-center gap-4 text-slate-500 text-sm"
+                        >
+                            <span
+                                class="flex items-center gap-1.5"
+                                v-if="session.customer"
                             >
-                                {{ session.status }}
+                                <UserIcon class="w-4 h-4" />
+                                {{ session.customer.name }}
                             </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <Link :href="route('admin.sessions.show', session.id)" class="text-slate-600 hover:text-slate-900 mr-3" title="View Details">
-                                <EyeIcon class="w-5 h-5 inline-block" />
+                            <span class="flex items-center gap-1.5">
+                                <CalendarIcon class="w-4 h-4" />
+                                {{ formatDate(session.shoot_date) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div
+                        class="flex-1 flex flex-wrap md:flex-nowrap items-center justify-start md:justify-end gap-6 md:pl-8 md:border-l border-slate-100"
+                    >
+                        <span
+                            class="px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 capitalize"
+                            :class="{
+                                'bg-blue-50 text-blue-700':
+                                    session.status === 'active',
+                                'bg-slate-100 text-slate-700':
+                                    session.status === 'completed',
+                                'bg-green-50 text-green-700':
+                                    session.status === 'delivered',
+                            }"
+                        >
+                            <span
+                                v-if="session.status === 'active'"
+                                class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"
+                            ></span>
+                            {{ session.status }}
+                        </span>
+
+                        <div class="flex items-center gap-2">
+                            <Link
+                                :href="route('admin.sessions.show', session.id)"
+                                class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-medium text-sm hover:bg-slate-50 transition-colors"
+                            >
+                                View Detail
                             </Link>
-                            <Link :href="route('admin.sessions.edit', session.id)" class="text-blue-600 hover:text-blue-900 mr-3" title="Edit Session">
-                                <PencilIcon class="w-5 h-5 inline-block" />
+                            <Link
+                                :href="route('admin.sessions.edit', session.id)"
+                                class="p-2.5 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                title="Edit"
+                            >
+                                <PencilIcon class="w-5 h-5" />
                             </Link>
-                            <button @click="confirmDelete(session)" class="text-red-600 hover:text-red-900" title="Delete Session">
-                                <TrashIcon class="w-5 h-5 inline-block" />
+                            <button
+                                @click="confirmDelete(session)"
+                                class="p-2.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                title="Delete"
+                            >
+                                <TrashIcon class="w-5 h-5" />
                             </button>
-                        </td>
-                    </tr>
-                    <tr v-if="!sessions.data.length">
-                        <td colspan="5" class="px-6 py-12 text-center text-slate-500">
-                            No photo sessions found.
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-            
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <div
+                v-else
+                class="bg-white p-12 rounded-xl shadow-sm text-center border border-slate-100"
+            >
+                <p class="text-slate-500 font-medium">
+                    No photo sessions found.
+                </p>
+            </div>
+
             <!-- Pagination -->
-            <div class="px-6 py-4 border-t border-slate-200 bg-slate-50" v-if="sessions.links.length > 3">
+            <div
+                class="mt-8 flex justify-center"
+                v-if="sessions.links.length > 3"
+            >
                 <div class="flex items-center gap-1">
                     <template v-for="(link, k) in sessions.links" :key="k">
                         <div
                             v-if="link.url === null"
-                            class="px-3 py-1 text-sm text-slate-400 border border-slate-200 rounded bg-white"
+                            class="px-3 py-1 text-sm text-slate-400 border border-slate-100 rounded-lg bg-white"
                             v-html="link.label"
                         />
                         <Link
                             v-else
                             :href="link.url"
-                            class="px-3 py-1 text-sm border border-slate-200 rounded transition-colors hover:bg-slate-100"
-                            :class="link.active ? 'bg-blue-50 border-blue-200 text-blue-600 font-medium' : 'bg-white text-slate-600'"
+                            class="px-3 py-1 text-sm border rounded-lg transition-colors"
+                            :class="
+                                link.active
+                                    ? 'bg-blue-50 border-blue-200 text-blue-700 font-medium shadow-sm'
+                                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                            "
                             v-html="link.label"
                         />
                     </template>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <Modal :show="isDeleteModalOpen" @close="isDeleteModalOpen = false" maxWidth="sm">
+        <!-- Delete Confirmation Modal -->
+        <Modal
+            :show="isDeleteModalOpen"
+            @close="isDeleteModalOpen = false"
+            maxWidth="sm"
+        >
             <div class="p-6">
-                <h2 class="text-lg font-medium text-slate-900 mb-4">Confirm Deletion</h2>
-                <p class="text-sm text-slate-600 mb-6">
-                    Are you sure you want to delete this session? This will remove all associated selections.
+                <h2 class="text-lg font-bold text-slate-900 mb-2">
+                    Confirm Deletion
+                </h2>
+                <p class="text-sm text-slate-500 mb-6 leading-relaxed">
+                    Are you sure you want to delete this session? This action
+                    cannot be undone and will remove all associated selections.
                 </p>
                 <div class="flex justify-end gap-3">
-                    <SecondaryButton @click="isDeleteModalOpen = false">Cancel</SecondaryButton>
-                    <DangerButton @click="deleteSession" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
-                        Delete
+                    <SecondaryButton
+                        @click="isDeleteModalOpen = false"
+                        class="rounded-xl"
+                        >Cancel</SecondaryButton
+                    >
+                    <DangerButton
+                        @click="deleteSession"
+                        class="rounded-xl"
+                        :class="{ 'opacity-25': form.processing }"
+                        :disabled="form.processing"
+                    >
+                        Delete Session
                     </DangerButton>
                 </div>
             </div>
