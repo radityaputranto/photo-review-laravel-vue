@@ -20,9 +20,18 @@ const checkWindowSize = () => {
     isSidebarOpen.value = window.innerWidth >= 1024
 }
 
+import { router } from '@inertiajs/vue3'
+
 onMounted(() => {
     checkWindowSize()
     window.addEventListener('resize', checkWindowSize)
+    
+    // Auto collapse on small screens when navigating
+    router.on('navigate', () => {
+        if (window.innerWidth < 1024) {
+            isSidebarOpen.value = false
+        }
+    })
 })
 
 onUnmounted(() => {
@@ -91,16 +100,15 @@ const isActive = (href) => {
                     title="Logout"
                 >
                     <ArrowRightOnRectangleIcon class="w-5 h-5" />
-                    </Link>
-                </div>
+                </Link>
             </div>
         </aside>
 
         <!-- Main Content -->
         <div class="flex-1 min-w-0 transition-all duration-300 ease-in-out" :class="isSidebarOpen ? 'lg:pl-64' : 'pl-0'">
             <!-- Top Header -->
-            <header class="sticky top-0 z-20 bg-slate-50/80 backdrop-blur-md px-4 sm:px-8 h-16 flex items-center lg:hidden">
-                <button @click="isSidebarOpen = !isSidebarOpen" class="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-200 rounded-lg transition-colors focus:outline-none">
+            <header class="sticky top-0 z-20 bg-slate-50/80 backdrop-blur-md px-4 sm:px-8 h-16 flex items-center">
+                <button @click="isSidebarOpen = !isSidebarOpen" class="p-2 -ml-2 text-slate-500 hover:text-slate-900 hover:bg-slate-200 rounded-lg transition-colors focus:outline-none">
                     <Bars3Icon class="w-6 h-6" />
                 </button>
             </header>
