@@ -57,11 +57,28 @@ npm run dev
 ```
 
 ## Step 7: Running the Application
+
+### Option A: Without Docker (Local PHP & Node)
 You can serve the application locally using Laravel's built-in development server:
 ```bash
 php artisan serve
 ```
 The application will be accessible at `http://localhost:8000`.
+
+### Option B: With Docker (No local PHP/Node required)
+If you prefer to run the application using Docker on your local PC (similar to the production environment):
+
+1. Make sure Docker and Docker Compose are running.
+2. Build and start the containers:
+   ```bash
+   docker-compose -f docker-compose.prod.yml up -d --build
+   ```
+3. Run the initial setup inside the Docker container:
+   ```bash
+   docker-compose -f docker-compose.prod.yml exec app php artisan key:generate
+   docker-compose -f docker-compose.prod.yml exec app php artisan migrate:fresh --seed
+   ```
+The application will be accessible at `http://localhost:80`. To stop the containers, run `docker-compose -f docker-compose.prod.yml down`.
 
 ## Default Login Credentials
 After seeding the database, you can log in with any of the following accounts:

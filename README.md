@@ -14,6 +14,7 @@ A comprehensive photo review and selection platform built with Laravel 11, Vue 3
 Please refer to the `docs/` folder for detailed guides on how to install and configure the application.
 
 - [Installation & Setup Guide](docs/installation.md)
+- [Deployment Guide (VPS/Docker)](docs/deployment.md)
 - [Google Drive API Setup](docs/google-drive.md)
 
 ## Requirements
