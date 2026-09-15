@@ -164,16 +164,32 @@ docker compose -f docker-compose.prod.yml exec app php artisan view:cache
 
 ## 5. Google Drive Integration (Optional)
 
-If you plan to use Google Drive photo syncing:
-1. Place your Service Account JSON key inside `storage/app/`:
-   ```bash
-   cp /path/to/downloaded-key.json storage/app/google-credentials.json
-   ```
-2. Adjust ownership:
-   ```bash
-   docker compose -f docker-compose.prod.yml exec app chown www-data:www-data /var/www/html/storage/app/google-credentials.json
-   ```
-3. See [docs/google-drive.md](google-drive.md) for full service account configuration.
+If you plan to use Google Drive photo syncing, you need to place your Service Account JSON key inside `storage/app/google-credentials.json`.
+
+### How to place the file on your Homelab server:
+- **Option 1: Paste directly using nano (Easiest)**:
+  ```bash
+  nano storage/app/google-credentials.json
+  ```
+  *(Paste the JSON key content, then press `CTRL+O`, `Enter`, and `CTRL+X`)*
+
+- **Option 2: Transfer via SCP from your PC**:
+  ```bash
+  # Run from your local PC terminal:
+  scp /path/to/google-key.json username@UBUNTU_SERVER_IP:~/apps/photo-review-laravel-vue/storage/app/google-credentials.json
+  ```
+
+### Set correct file permissions:
+```bash
+docker compose -f docker-compose.prod.yml exec app chown www-data:www-data /var/www/html/storage/app/google-credentials.json
+docker compose -f docker-compose.prod.yml exec app chmod 644 /var/www/html/storage/app/google-credentials.json
+```
+
+> [!NOTE]
+> **Does `google-credentials.json` survive container rebuilds and restarts?**
+> **YES.** Because `storage` and `.env` are mounted as persistent volumes on your host server, rebuilding images (`docker compose up -d --build`) or removing containers (`docker compose down`) will **NOT** delete `google-credentials.json` or your database. You only need to place this file once during initial setup.
+
+See [docs/google-drive.md](google-drive.md) for full details on creating the Google Cloud Service Account.
 
 ---
 
