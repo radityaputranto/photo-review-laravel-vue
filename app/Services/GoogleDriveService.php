@@ -8,15 +8,59 @@ use Illuminate\Support\Facades\Cache;
 
 class GoogleDriveService
 {
-    protected Client $client;
-    protected Drive $drive;
+    protected ?Client $client = null;
+    protected ?Drive $drive = null;
 
     public function __construct()
     {
-        $this->client = new Client();
-        $this->client->setAuthConfig(storage_path('app/google-credentials.json'));
-        $this->client->addScope(Drive::DRIVE_READONLY);
-        $this->drive = new Drive($this->client);
+        // Credentials are loaded lazily so pages can render even if Google Drive API is not yet configured
+    }
+
+    /**
+     * Cek apakah file kredensial Google Drive tersedia
+     */
+    public function isConfigured(): bool
+    {
+        $path = $this->getCredentialsPath();
+        return file_exists($path) && is_readable($path);
+    }
+
+    /**
+     * Dapatkan path file kredensial Google
+     */
+    protected function getCredentialsPath(): string
+    {
+        $customPath = env('GOOGLE_APPLICATION_CREDENTIALS');
+        if ($customPath && file_exists($customPath)) {
+            return $customPath;
+        }
+
+        return storage_path('app/google-credentials.json');
+    }
+
+    /**
+     * Dapatkan instance Google Drive Service (Lazy loaded)
+     */
+    protected function getDrive(): ?Drive
+    {
+        if ($this->drive !== null) {
+            return $this->drive;
+        }
+
+        if (!$this->isConfigured()) {
+            return null;
+        }
+
+        try {
+            $this->client = new Client();
+            $this->client->setAuthConfig($this->getCredentialsPath());
+            $this->client->addScope(Drive::DRIVE_READONLY);
+            $this->drive = new Drive($this->client);
+            return $this->drive;
+        } catch (\Throwable $e) {
+            \Log::warning('Failed to initialize Google Drive client: ' . $e->getMessage());
+            return null;
+        }
     }
 
     /**
@@ -40,30 +84,40 @@ class GoogleDriveService
      */
     public function getPhotosFromFolder(string $folderId): array
     {
+        $drive = $this->getDrive();
+        if (!$drive) {
+            return [];
+        }
+
         $cacheKey = 'drive_folder_' . $folderId;
         $minutes  = config('app.google_drive_cache_minutes', 10);
 
-        return Cache::remember($cacheKey, now()->addMinutes($minutes), function () use ($folderId) {
-            $results = $this->drive->files->listFiles([
-                'q'      => "'{$folderId}' in parents and mimeType contains 'image/' and trashed = false",
-                'fields' => 'files(id, name, mimeType, size, createdTime, thumbnailLink)',
-                'orderBy' => 'name',
-            ]);
+        return Cache::remember($cacheKey, now()->addMinutes($minutes), function () use ($drive, $folderId) {
+            try {
+                $results = $drive->files->listFiles([
+                    'q'      => "'{$folderId}' in parents and mimeType contains 'image/' and trashed = false",
+                    'fields' => 'files(id, name, mimeType, size, createdTime, thumbnailLink)',
+                    'orderBy' => 'name',
+                ]);
 
-            return array_map(function ($file) {
-                $thumbUrl = $file->getThumbnailLink();
-                // Replace =s220 with =s400 for a sharper thumbnail
-                $thumbnail = $thumbUrl ? preg_replace('/=s\d+$/', '=s600', $thumbUrl) : $this->getThumbnailUrl($file->getId());
-                // Use =s0 for original resolution full image preview
-                $viewUrl = $thumbUrl ? preg_replace('/=s\d+$/', '=s0', $thumbUrl) : "https://drive.google.com/file/d/{$file->getId()}/view";
+                return array_map(function ($file) {
+                    $thumbUrl = $file->getThumbnailLink();
+                    // Replace =s220 with =s400 for a sharper thumbnail
+                    $thumbnail = $thumbUrl ? preg_replace('/=s\d+$/', '=s600', $thumbUrl) : $this->getThumbnailUrl($file->getId());
+                    // Use =s0 for original resolution full image preview
+                    $viewUrl = $thumbUrl ? preg_replace('/=s\d+$/', '=s0', $thumbUrl) : "https://drive.google.com/file/d/{$file->getId()}/view";
 
-                return [
-                    'id'           => $file->getId(),
-                    'name'         => $file->getName(),
-                    'thumbnail'    => $thumbnail,
-                    'view_url'     => $viewUrl,
-                ];
-            }, $results->getFiles());
+                    return [
+                        'id'           => $file->getId(),
+                        'name'         => $file->getName(),
+                        'thumbnail'    => $thumbnail,
+                        'view_url'     => $viewUrl,
+                    ];
+                }, $results->getFiles());
+            } catch (\Throwable $e) {
+                \Log::error('Error fetching photos from Google Drive: ' . $e->getMessage());
+                return [];
+            }
         });
     }
 
@@ -72,8 +126,13 @@ class GoogleDriveService
      */
     public function getFolderInfo(string $folderId): ?array
     {
+        $drive = $this->getDrive();
+        if (!$drive) {
+            return null;
+        }
+
         try {
-            $folder = $this->drive->files->get($folderId, [
+            $folder = $drive->files->get($folderId, [
                 'fields' => 'id, name',
             ]);
 

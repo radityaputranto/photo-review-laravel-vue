@@ -1,15 +1,5 @@
 # ---------------------------------------------------------
-# Stage 1: Build Vue/Vite Assets
-# ---------------------------------------------------------
-FROM node:20-alpine as node-build
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-# ---------------------------------------------------------
-# Stage 2: Install PHP Dependencies
+# Stage 1: Install PHP Dependencies
 # ---------------------------------------------------------
 FROM composer:2.7 as vendor-build
 WORKDIR /app
@@ -18,9 +8,21 @@ COPY composer.json composer.lock ./
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --ignore-platform-reqs --no-scripts
 
 # ---------------------------------------------------------
+# Stage 2: Build Vue/Vite Assets
+# ---------------------------------------------------------
+FROM node:20-alpine as node-build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+# Copy vendor from vendor-build stage so Ziggy and other vendor assets can be resolved by Vite
+COPY --from=vendor-build /app/vendor/ /app/vendor/
+RUN npm run build
+
+# ---------------------------------------------------------
 # Stage 3: Production Image
 # ---------------------------------------------------------
-FROM php:8.2-fpm-alpine
+FROM php:8.4-fpm-alpine
 
 # Install system dependencies & PHP extensions needed for Laravel
 RUN apk add --no-cache \
