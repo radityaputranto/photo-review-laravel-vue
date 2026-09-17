@@ -43,7 +43,10 @@ const submit = async () => {
     if (!isFormValid) return;
 
     form.post(route('login'), {
-        onFinish: () => form.reset('password'),
+        onFinish: () => {
+            form.reset('password');
+            v$.value.$reset();
+        },
     });
 };
 </script>

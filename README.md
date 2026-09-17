@@ -16,6 +16,7 @@ Please refer to the `docs/` folder for detailed guides on how to install and con
 - [Installation & Setup Guide](docs/installation.md)
 - [Ubuntu Server & Homelab Docker Deployment Guide](docs/ubuntu-server-homelab-deployment.md)
 - [Deployment Guide (VPS/Docker)](docs/deployment.md)
+- [Reverse Proxy, HTTPS & Authentication Setup](docs/reverse-proxy-auth-setup.md)
 - [Google Drive API Setup](docs/google-drive.md)
 
 ## Requirements

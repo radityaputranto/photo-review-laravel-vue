@@ -7,7 +7,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 Route::get('/', function () {
     if (auth()->check()) {
         $user = auth()->user();
-        if (in_array($user->role, ['admin', 'photographer'])) {
+        if (in_array($user->role, ['super_admin', 'admin', 'photographer'])) {
             return redirect()->route('admin.dashboard');
         }
         return redirect()->route('customer.dashboard');
